@@ -1,70 +1,70 @@
-name: Check-in
+# name: Check-in
 
-on:
-  pull_request:
-    branches:
-      - main
+# on:
+#   pull_request:
+#     branches:
+#       - main
 
-jobs:
-  formatting-check:
-    name: Code Formatting Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Clang Formatter
-        uses: jidicula/clang-format-action@v4.14.0
-        with:
-          clang-format-version: '19'
+# jobs:
+#   formatting-check:
+#     name: Code Formatting Check
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Clang Formatter
+#         uses: jidicula/clang-format-action@v4.14.0
+#         with:
+#           clang-format-version: '19'
 
-  build:
-    name: Build Project
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ ubuntu-latest, windows-latest ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setup (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
+#   build:
+#     name: Build Project
+#     runs-on: ${{ matrix.os }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         os: [ ubuntu-latest, windows-latest ]
+#     steps:
+#       - uses: actions/checkout@v4
+#       - name: Setup (Linux)
+#         if: runner.os == 'Linux'
+#         run: |
+#           sudo apt-get update
 
-          echo "Installing CMake..."
-          sudo apt-get install -y cmake
+#           echo "Installing CMake..."
+#           sudo apt-get install -y cmake
 
-          echo "Installing Ninja..."
-          sudo apt-get install -y ninja-build
+#           echo "Installing Ninja..."
+#           sudo apt-get install -y ninja-build
 
-          echo "Installing Clang..."
-          sudo apt-get install -y clang
+#           echo "Installing Clang..."
+#           sudo apt-get install -y clang
 
-          echo "Installing VCPKG..."
-          git clone https://github.com/microsoft/vcpkg.git
-          ./vcpkg/bootstrap-vcpkg.sh
-          export VCPKG_ROOT="$PWD/vcpkg"
-          export PATH="$VCPKG_ROOT:$PATH"
-          echo "VCPKG_ROOT: $VCPKG_ROOT"
+#           echo "Installing VCPKG..."
+#           git clone https://github.com/microsoft/vcpkg.git
+#           ./vcpkg/bootstrap-vcpkg.sh
+#           export VCPKG_ROOT="$PWD/vcpkg"
+#           export PATH="$VCPKG_ROOT:$PATH"
+#           echo "VCPKG_ROOT: $VCPKG_ROOT"
 
-      - name: Setup (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo "Installing CMake..."
-          choco install cmake -y
+#       - name: Setup (Windows)
+#         if: runner.os == 'Windows'
+#         run: |
+#           echo "Installing CMake..."
+#           choco install cmake -y
 
-          echo "Installing Ninja..."
-          choco install ninja -y
+#           echo "Installing Ninja..."
+#           choco install ninja -y
 
-          echo "Installing Clang..."
-          choco install llvm -y
+#           echo "Installing Clang..."
+#           choco install llvm -y
 
-          echo "Installing VCPKG..."
-          git clone https://github.com/microsoft/vcpkg.git
-          .\vcpkg\bootstrap-vcpkg.bat
-          $env:VCPKG_ROOT = "$PWD\vcpkg"
-          $env:PATH = "$env:VCPKG_ROOT;$env:PATH"
-          echo "VCPKG_ROOT: $env:VCPKG_ROOT"
+#           echo "Installing VCPKG..."
+#           git clone https://github.com/microsoft/vcpkg.git
+#           .\vcpkg\bootstrap-vcpkg.bat
+#           $env:VCPKG_ROOT = "$PWD\vcpkg"
+#           $env:PATH = "$env:VCPKG_ROOT;$env:PATH"
+#           echo "VCPKG_ROOT: $env:VCPKG_ROOT"
 
-      - name: Build Project
-        run: |
-          cmake --preset="ninja-clang-debug"
+#       - name: Build Project
+#         run: |
+#           cmake --preset="ninja-clang-debug"

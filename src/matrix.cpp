@@ -159,9 +159,12 @@ auto supmath::Matrix<T>::operator*(const U factor) const -> Matrix<std::common_t
       result[row][col] = factor * _elements[row][col];
     }
   }
-
+  int a          =           24;
+       double b   =    3;
   return result;
 }
+
+
 
 template<Numerical T>
 template<Numerical U>
