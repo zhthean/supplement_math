@@ -1,0 +1,121 @@
+name: Format Code
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  clang-format:
+    name: Clang Format
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Install Clang Format
+        run: |
+          sudo apt update
+          sudo apt install wget gpg -y
+          sudo add-apt-repository 'deb http://apt.llvm.org/noble/ llvm-toolchain-noble-20 main'
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+          sudo apt update
+          sudo apt install -y clang-format-19
+          sudo ln -sf /usr/bin/clang-format-19 /usr/local/bin/clang-format
+
+      - name: Check Code Format
+        id: check_format
+        run: |
+          files=$(find . -type f \( -name '*.cpp' -o -name '*.h' \))
+          if [ -n "$files" ]; then
+            clang-format --dry-run --Werror $files
+          else
+            echo "No files to check."
+          fi
+
+      - name: Pull Branch
+        if: failure()
+        run: |
+          git pull origin ${GITHUB_HEAD_REF} --rebase
+
+      - name: Fix Format (if needed)
+        if: failure()
+        run: |
+          files=$(find . -type f \( -name '*.cpp' -o -name '*.h' \))
+          if [ -n "$files" ]; then
+            clang-format -i $files
+          else
+            echo "No files to format."
+          fi
+
+      - name: Push Changes
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+        run: |
+          git config --global user.name "Bot"
+          git config --global user.email "213378525+ZH-Bot1@users.noreply.github.com"
+          git add .
+          git commit -m "Auto formatting code" || echo "No changes to commit"
+          git push origin HEAD:${GITHUB_HEAD_REF}
+
+  build:
+    name: Build Project
+    needs: clang-format
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+
+      - name: Setup (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+
+          echo "Installing CMake..."
+          sudo apt-get install -y cmake
+
+          echo "Installing Ninja..."
+          sudo apt-get install -y ninja-build
+
+          echo "Installing Clang..."
+          sudo apt-get install -y clang
+
+          echo "Installing VCPKG..."
+          git clone https://github.com/microsoft/vcpkg.git
+          ./vcpkg/bootstrap-vcpkg.sh
+          export VCPKG_ROOT="$PWD/vcpkg"
+          export PATH="$VCPKG_ROOT:$PATH"
+          echo "VCPKG_ROOT: $VCPKG_ROOT"
+
+      - name: Setup (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "Installing CMake..."
+          choco install cmake -y
+
+          echo "Installing Ninja..."
+          choco install ninja -y
+
+          echo "Installing Clang..."
+          choco install llvm -y
+
+          echo "Installing VCPKG..."
+          git clone https://github.com/microsoft/vcpkg.git
+          .\vcpkg\bootstrap-vcpkg.bat
+          $env:VCPKG_ROOT = "$PWD\vcpkg"
+          $env:PATH = "$env:VCPKG_ROOT;$env:PATH"
+          echo "VCPKG_ROOT: $env:VCPKG_ROOT"
+
+      - name: Build Project
+        run: |
+          cmake --preset="ninja-clang-debug"
